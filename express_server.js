@@ -5,7 +5,7 @@ const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({extended: true}));
 app.set("view engine", "ejs");
 
-const generateRandomString() {
+const generateRandomString = function() {
   let randomString = Math.random().toString(36).slice(2, 8);
   return randomString;
 };
@@ -43,8 +43,12 @@ app.get("/hello", (req, res) => {
 });
 
 app.post("/urls", (req, res) => {
-  console.log(req.body);
-  res.send("Ok");
+  let longURL = req.body.longURL;
+  console.log(longURL);
+  let shortURL = generateRandomString();
+  console.log(shortURL);
+  urlDatabase[shortURL] = longURL;
+  res.redirect(`/urls/${shortURL}`);
 });
 
 app.listen(PORT, () => {
