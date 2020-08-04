@@ -2,6 +2,7 @@ const express = require("express");
 const app = express();
 const PORT = 8080; // default port 8080
 const bodyParser = require("body-parser");
+const { response } = require("express");
 app.use(bodyParser.urlencoded({extended: true}));
 app.set("view engine", "ejs");
 
@@ -42,6 +43,17 @@ app.get("/hello", (req, res) => {
   res.send("<html><body>Hello <b>World</b></body></html>\n");
 });
 
+app.get("/u/:shortURL", (req, res) => {
+  let shortURL = req.params.shortURL;
+  let longURL = urlDatabase[shortURL];
+  if (!longURL) {
+    res.statusCode = 404;
+    res.render("404");
+  } else {
+    res.redirect(longURL);
+  }
+});
+
 app.post("/urls", (req, res) => {
   let longURL = req.body.longURL;
   console.log(longURL);
@@ -50,6 +62,11 @@ app.post("/urls", (req, res) => {
   urlDatabase[shortURL] = longURL;
   res.redirect(`/urls/${shortURL}`);
 });
+
+// app.get("*", (request, response) => {
+//   res.statusCode(404);
+//   res.render("404");
+// });
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
