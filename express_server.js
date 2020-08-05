@@ -8,6 +8,19 @@ app.use(bodyParser.urlencoded({extended: true}));
 app.set("view engine", "ejs");
 app.use(cookieParser());
 
+const users = {
+  "userRandomID": {
+    id: "userRandomID",
+    email: "user@example.com",
+    password: "purple-monkey-dinosaur"
+  },
+  "user2RandomID": {
+    id: "user2RandomID",
+    email: "user2@example.com",
+    password: "dishwasher-funk"
+  }
+};
+
 const generateRandomString = function() {
   let randomString = Math.random().toString(36).slice(2, 8);
   return randomString;
@@ -27,22 +40,25 @@ app.get("/urls.json", (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
+  let userID = req.cookies["user_id"];
   let templateVars = {
-    username: req.cookies["username"],
+    user: users[userID],
     urls: urlDatabase
   };
   res.render("urls_index", templateVars);
 });
 
 app.get("/urls/new", (req, res) => {
-  let templateVars = { username: req.cookies["username"] };
+  let userID = req.cookies["user_id"];
+  let templateVars = { user: users[userID] };
   res.render("urls_new", templateVars);
 });
 
 app.get("/urls/:shortURL", (req, res) => {
   let shortURL = req.params.shortURL;
+  let userID = req.cookies["user_id"];
   let templateVars = {
-    username: req.cookies["username"],
+    user: users[userID],
     shortURL: shortURL,
     longURL: urlDatabase[shortURL]
   };
@@ -56,7 +72,8 @@ app.get("/hello", (req, res) => {
 app.get("/u/:shortURL", (req, res) => {
   let shortURL = req.params.shortURL;
   let longURL = urlDatabase[shortURL];
-  let templateVars = { username: req.cookies["username"] };
+  let userID = req.cookies["user_id"];
+  let templateVars = { user: users[userID] };
   if (!longURL) {
     res.statusCode = 404;
     res.render("404", templateVars);
@@ -66,7 +83,8 @@ app.get("/u/:shortURL", (req, res) => {
 });
 
 app.get("/register", (req, res) => {
-  let templateVars = { username: req.cookies["username"] };
+  let userID = req.cookies["user_id"];
+  let templateVars = { user: users[userID] };
   res.render("register", templateVars);
 });
 
@@ -99,6 +117,17 @@ app.post("/login", (req, res) => {
 app.post("/logout", (req, res) => {
   let username = req.body.username;
   res.clearCookie("username", username);
+  res.redirect("/urls");
+});
+
+app.post("/register", (req, res) => {
+  let user = {
+    id: generateRandomString(),
+    email: req.body.email,
+    password: req.body.password
+  };
+  users[user.id] = user;
+  res.cookie("user_id", user.id);
   res.redirect("/urls");
 });
 /// END OF ROUTES ///
