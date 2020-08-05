@@ -30,6 +30,16 @@ const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com"
 };
+
+const isEmailAlreadyRegistered = function(submittedEmail) {
+  for (let i of Object.keys(users)) {
+    if (users[i].email === submittedEmail)
+      return true;
+  }
+  return false;
+};
+
+
 /// ROUTES ///
 app.get("/", (req, res) => {
   res.send("Hello!");
@@ -126,9 +136,14 @@ app.post("/register", (req, res) => {
     email: req.body.email,
     password: req.body.password
   };
-  users[user.id] = user;
-  res.cookie("user_id", user.id);
-  res.redirect("/urls");
+  if (user.email === "" || user.password === "" || (isEmailAlreadyRegistered(user.email))) {
+    res.statusCode = 400;
+    res.send("400 - Bad Request");
+  } else {
+    users[user.id] = user;
+    res.cookie("user_id", user.id);
+    res.redirect("/urls");
+  }
 });
 /// END OF ROUTES ///
 app.listen(PORT, () => {
