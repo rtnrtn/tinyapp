@@ -17,7 +17,7 @@ const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com"
 };
-
+/// ROUTES ///
 app.get("/", (req, res) => {
   res.send("Hello!");
 });
@@ -56,12 +56,18 @@ app.get("/hello", (req, res) => {
 app.get("/u/:shortURL", (req, res) => {
   let shortURL = req.params.shortURL;
   let longURL = urlDatabase[shortURL];
+  let templateVars = { username: req.cookies["username"] };
   if (!longURL) {
     res.statusCode = 404;
     res.render("404", templateVars);
   } else {
     res.redirect(longURL);
   }
+});
+
+app.get("/register", (req, res) => {
+  let templateVars = { username: req.cookies["username"] };
+  res.render("register", templateVars);
 });
 
 app.post("/urls", (req, res) => {
@@ -95,7 +101,7 @@ app.post("/logout", (req, res) => {
   res.clearCookie("username", username);
   res.redirect("/urls");
 });
-
+/// END OF ROUTES ///
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
