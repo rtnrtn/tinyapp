@@ -4,7 +4,7 @@ const PORT = 8080;
 const bodyParser = require("body-parser");
 const { response } = require("express");
 const cookieParser = require("cookie-parser");
-app.use(bodyParser.urlencoded({extended: true}));
+app.use(bodyParser.urlencoded({ extended: true }));
 app.set("view engine", "ejs");
 app.use(cookieParser());
 
@@ -21,7 +21,7 @@ const users = {
   }
 };
 
-const generateRandomString = function() {
+const generateRandomString = function () {
   let randomString = Math.random().toString(36).slice(2, 8);
   return randomString;
 };
@@ -31,12 +31,11 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com"
 };
 
-const isEmailAlreadyRegistered = function(submittedEmail) {
-  for (let i of Object.keys(users)) {
-    if (users[i].email === submittedEmail)
-      return true;
+const findUserByEmail = function (submittedEmail) {
+  for (let userID of Object.keys(users)) {
+    if (users[userID].email === submittedEmail)
+      return users[userID];
   }
-  return false;
 };
 
 
@@ -125,14 +124,23 @@ app.post("/urls/:id", (req, res) => {
 });
 
 app.post("/login", (req, res) => {
-  let username = req.body.username;
-  res.cookie("username", username);
-  res.redirect("/urls");
+  let email = req.body.email;
+  let password = req.body.password;
+  let user = findUserByEmail(email);
+  if (!user) {
+    res.statusCode = 403;
+    res.send("403 - That email doesn't exist");
+  } else if (user.password !== password) {
+    res.statusCode = 403;
+    res.send("403 - Bad email/password combo");
+  } else {
+    res.cookie("user_id", user.id);
+    res.redirect("/urls");
+  }
 });
 
 app.post("/logout", (req, res) => {
-  let username = req.body.username;
-  res.clearCookie("username", username);
+  res.clearCookie("user_id");
   res.redirect("/urls");
 });
 
@@ -142,7 +150,7 @@ app.post("/register", (req, res) => {
     email: req.body.email,
     password: req.body.password
   };
-  if (user.email === "" || user.password === "" || (isEmailAlreadyRegistered(user.email))) {
+  if (user.email === "" || user.password === "" || (findUserByEmail(user.email))) {
     res.statusCode = 400;
     res.send("400 - Bad Request");
   } else {
