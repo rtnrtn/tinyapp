@@ -5,6 +5,7 @@ const bodyParser = require("body-parser");
 const cookieSession = require("cookie-session");
 const bcrypt = require("bcrypt");
 const saltRounds = 10;
+const { getUserByEmail } = require("./helpers");
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.set("view engine", "ejs");
@@ -36,14 +37,6 @@ const urlDatabase = {
   "9sm5xK": { longURL: "http://www.google.com", userID: "user2RandomID" }
 };
 
-const findUserByEmail = function(submittedEmail) {
-  for (let userID of Object.keys(users)) {
-    if (users[userID].email === submittedEmail) {
-      return users[userID];
-    }
-  }
-};
-
 const urlsForUser = function(id) {
   let urlsForUserID = {};
   for (let key of Object.keys(urlDatabase)) {
@@ -54,7 +47,6 @@ const urlsForUser = function(id) {
   }
   return urlsForUserID;
 };
-
 
 /// ROUTES ///
 app.get("/", (req, res) => {
@@ -169,13 +161,13 @@ app.post("/urls/:id", (req, res) => {
 app.post("/login", (req, res) => {
   let email = req.body.email;
   let password = req.body.password;
-  let user = findUserByEmail(email);
+  let user = getUserByEmail(email, users);
   if (!user) {
     res.statusCode = 403;
-    res.send("403 - That email doesn't exist");
+    res.send("403 - Sorry, that email isn't registered.");
   } else if (!bcrypt.compareSync(password, user.password)) {
     res.statusCode = 403;
-    res.send("403 - Bad email/password combo");
+    res.send("403 - Incorrect email and/or password.");
   } else {
     req.session["user_id"] = user.id;
     res.redirect("/urls");
@@ -193,9 +185,12 @@ app.post("/register", (req, res) => {
     email: req.body.email,
     password: bcrypt.hashSync(req.body.password, saltRounds)
   };
-  if (user.email === "" || user.password === "" || (findUserByEmail(user.email))) {
+  if (user.email === "" || user.password === "") {
     res.statusCode = 400;
-    res.send("400 - Bad Request");
+    res.send("400 - Email and/or password was blank. Please try again.");
+  } else if (getUserByEmail(user.email, users)) {
+    res.statusCode = 400;
+    res.send("400 - Sorry, that email is already registered.");
   } else {
     users[user.id] = user;
     req.session["user_id"] = user.id;
