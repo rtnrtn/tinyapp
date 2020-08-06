@@ -39,15 +39,15 @@ const findUserByEmail = function(submittedEmail) {
   }
 };
 
-const findURLsByUserID = function(urlDatabase, userID) {
-  let URLsForUserID = {};
+const urlsForUser = function(id) {
+  let urlsForUserID = {};
   for (let key of Object.keys(urlDatabase)) {
     let value = urlDatabase[key];
-    if (value.userID === userID) {
-      URLsForUserID[key] = value;
+    if (value.userID === id) {
+      urlsForUserID[key] = value;
     }
   }
-  return URLsForUserID;
+  return urlsForUserID;
 };
 
 
@@ -64,7 +64,7 @@ app.get("/urls", (req, res) => {
   let userID = req.cookies["user_id"];
   let templateVars = {
     user: users[userID],
-    urls: findURLsByUserID(urlDatabase, userID)
+    urls: urlsForUser(userID)
   };
   res.render("urls_index", templateVars);
 });
@@ -82,11 +82,16 @@ app.get("/urls/new", (req, res) => {
 app.get("/urls/:shortURL", (req, res) => {
   let shortURL = req.params.shortURL;
   let userID = req.cookies["user_id"];
+  let url = urlDatabase[shortURL];
+  let ownerIsLoggedIn = url.userID === userID;
   let templateVars = {
     user: users[userID],
-    shortURL: shortURL,
-    longURL: urlDatabase[shortURL].longURL
+    ownerIsLoggedIn: ownerIsLoggedIn
   };
+  if (ownerIsLoggedIn) {
+    templateVars.shortURL = shortURL;
+    templateVars.longURL = urlDatabase[shortURL].longURL;
+  }
   res.render("urls_show", templateVars);
 });
 
@@ -131,19 +136,28 @@ app.post("/urls", (req, res) => {
 });
 
 app.post("/urls/:shortURL/delete", (req, res) => {
+  let userID = req.cookies["user_id"];
   let shortURL = req.params.shortURL;
-  delete urlDatabase[shortURL];
+  let url = urlDatabase[shortURL];
+  let ownerIsLoggedIn = url.userID === userID;
+  if (ownerIsLoggedIn) {
+    delete urlDatabase[shortURL];
+  }
   res.redirect("/urls");
 });
 
 app.post("/urls/:id", (req, res) => {
   let userID = req.cookies["user_id"];
   let shortURL = req.params.id;
-  let longURL = req.body.newURL;
-  urlDatabase[shortURL] = {
-    longURL: longURL,
-    userID: userID
-  };
+  let url = urlDatabase[shortURL];
+  let ownerIsLoggedIn = url.userID === userID;
+  if (ownerIsLoggedIn) {
+    let longURL = req.body.newURL;
+    urlDatabase[shortURL] = {
+      longURL: longURL,
+      userID: userID
+    };
+  }
   res.redirect("/urls");
 });
 
