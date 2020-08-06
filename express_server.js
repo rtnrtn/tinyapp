@@ -4,6 +4,9 @@ const PORT = 8080;
 const bodyParser = require("body-parser");
 const { response } = require("express");
 const cookieParser = require("cookie-parser");
+const bcrypt = require("bcrypt");
+const saltRounds = 10;
+
 app.use(bodyParser.urlencoded({ extended: true }));
 app.set("view engine", "ejs");
 app.use(cookieParser());
@@ -168,7 +171,7 @@ app.post("/login", (req, res) => {
   if (!user) {
     res.statusCode = 403;
     res.send("403 - That email doesn't exist");
-  } else if (user.password !== password) {
+  } else if (!bcrypt.compareSync(password, user.password)) {
     res.statusCode = 403;
     res.send("403 - Bad email/password combo");
   } else {
@@ -186,7 +189,7 @@ app.post("/register", (req, res) => {
   let user = {
     id: generateRandomString(),
     email: req.body.email,
-    password: req.body.password
+    password: bcrypt.hashSync(req.body.password, saltRounds)
   };
   if (user.email === "" || user.password === "" || (findUserByEmail(user.email))) {
     res.statusCode = 400;
@@ -196,6 +199,7 @@ app.post("/register", (req, res) => {
     res.cookie("user_id", user.id);
     res.redirect("/urls");
   }
+  console.log(user);
 });
 /// END OF ROUTES ///
 app.listen(PORT, () => {

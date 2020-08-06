@@ -1,7 +1,7 @@
 {
   "name": "tinyapp",
   "version": "1.0.0",
-  "description": "",
+  "description": "A full stack web app built with Node and Express that allows users to shorten long URLs.",
   "main": "express_server.js",
   "scripts": {
     "start": "./node_modules/.bin/nodemon -L express_server.js",
@@ -12,13 +12,14 @@
     "url": "git+https://github.com/rtnrtn/tinyapp.git"
   },
   "keywords": [],
-  "author": "",
+  "author": "Tania N",
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/rtnrtn/tinyapp/issues"
   },
   "homepage": "https://github.com/rtnrtn/tinyapp#readme",
   "dependencies": {
+    "bcrypt": "2.0.0",
     "body-parser": "^1.19.0",
     "cookie-parser": "^1.4.5",
     "ejs": "^3.1.3",
