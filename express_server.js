@@ -2,14 +2,16 @@ const express = require("express");
 const app = express();
 const PORT = 8080;
 const bodyParser = require("body-parser");
-const { response } = require("express");
-const cookieParser = require("cookie-parser");
+const cookieSession = require("cookie-session");
 const bcrypt = require("bcrypt");
 const saltRounds = 10;
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.set("view engine", "ejs");
-app.use(cookieParser());
+app.use(cookieSession({
+  name: 'session',
+  keys: ['randomstring', 'anotherrandomstring']
+}));
 
 const users = {
   "userRandomID": {
@@ -64,7 +66,7 @@ app.get("/urls.json", (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
-  let userID = req.cookies["user_id"];
+  let userID = req.session["user_id"];
   let templateVars = {
     user: users[userID],
     urls: urlsForUser(userID)
@@ -73,7 +75,7 @@ app.get("/urls", (req, res) => {
 });
 
 app.get("/urls/new", (req, res) => {
-  let userID = req.cookies["user_id"];
+  let userID = req.session["user_id"];
   let templateVars = { user: users[userID] };
   if (!userID) {
     res.redirect("/login");
@@ -84,7 +86,7 @@ app.get("/urls/new", (req, res) => {
 
 app.get("/urls/:shortURL", (req, res) => {
   let shortURL = req.params.shortURL;
-  let userID = req.cookies["user_id"];
+  let userID = req.session["user_id"];
   let url = urlDatabase[shortURL];
   let ownerIsLoggedIn = url.userID === userID;
   let templateVars = {
@@ -105,7 +107,7 @@ app.get("/hello", (req, res) => {
 app.get("/u/:shortURL", (req, res) => {
   let shortURL = req.params.shortURL;
   let longURL = urlDatabase[shortURL].longURL;
-  let userID = req.cookies["user_id"];
+  let userID = req.session["user_id"];
   let templateVars = { user: users[userID] };
   if (!longURL) {
     res.statusCode = 404;
@@ -116,19 +118,19 @@ app.get("/u/:shortURL", (req, res) => {
 });
 
 app.get("/register", (req, res) => {
-  let userID = req.cookies["user_id"];
+  let userID = req.session["user_id"];
   let templateVars = { user: users[userID] };
   res.render("register", templateVars);
 });
 
 app.get("/login", (req, res) => {
-  let userID = req.cookies["user_id"];
+  let userID = req.session["user_id"];
   let templateVars = { user: users[userID] };
   res.render("login", templateVars);
 });
 
 app.post("/urls", (req, res) => {
-  let userID = req.cookies["user_id"];
+  let userID = req.session["user_id"];
   let longURL = req.body.longURL;
   let shortURL = generateRandomString();
   urlDatabase[shortURL] = {
@@ -139,7 +141,7 @@ app.post("/urls", (req, res) => {
 });
 
 app.post("/urls/:shortURL/delete", (req, res) => {
-  let userID = req.cookies["user_id"];
+  let userID = req.session["user_id"];
   let shortURL = req.params.shortURL;
   let url = urlDatabase[shortURL];
   let ownerIsLoggedIn = url.userID === userID;
@@ -150,7 +152,7 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 });
 
 app.post("/urls/:id", (req, res) => {
-  let userID = req.cookies["user_id"];
+  let userID = req.session["user_id"];
   let shortURL = req.params.id;
   let url = urlDatabase[shortURL];
   let ownerIsLoggedIn = url.userID === userID;
@@ -175,13 +177,13 @@ app.post("/login", (req, res) => {
     res.statusCode = 403;
     res.send("403 - Bad email/password combo");
   } else {
-    res.cookie("user_id", user.id);
+    req.session["user_id"] = user.id;
     res.redirect("/urls");
   }
 });
 
 app.post("/logout", (req, res) => {
-  res.clearCookie("user_id");
+  req.session = null;
   res.redirect("/urls");
 });
 
@@ -196,10 +198,9 @@ app.post("/register", (req, res) => {
     res.send("400 - Bad Request");
   } else {
     users[user.id] = user;
-    res.cookie("user_id", user.id);
+    req.session["user_id"] = user.id;
     res.redirect("/urls");
   }
-  console.log(user);
 });
 /// END OF ROUTES ///
 app.listen(PORT, () => {
