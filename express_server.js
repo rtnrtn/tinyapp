@@ -49,6 +49,7 @@ const urlsForUser = function(id) {
 };
 
 /// ROUTES ///
+/// GET / and redirect to GET /login if user isn't logged in or to GET /urls if user is logged in
 app.get("/", (req, res) => {
   let userID = req.session["user_id"];
   if (!userID) {
@@ -57,11 +58,11 @@ app.get("/", (req, res) => {
     res.redirect("/urls");
   }
 });
-
+/// GET list of all URLs in database in JSON format
 app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
-
+/// GET /urls, urls_index file displays error if user isn't logged in
 app.get("/urls", (req, res) => {
   let userID = req.session["user_id"];
   let templateVars = {
@@ -70,7 +71,7 @@ app.get("/urls", (req, res) => {
   };
   res.render("urls_index", templateVars);
 });
-
+/// GET /urls/new if user is logged in, otherwise redirect to GET /login
 app.get("/urls/new", (req, res) => {
   let userID = req.session["user_id"];
   let templateVars = { user: users[userID] };
@@ -80,7 +81,7 @@ app.get("/urls/new", (req, res) => {
     res.render("urls_new", templateVars);
   }
 });
-
+/// GET /urls/:shortURL only if :shortURL exists and if user is logged in and owns :shortURL
 app.get("/urls/:shortURL", (req, res) => {
   let shortURL = req.params.shortURL;
   let url = urlDatabase[shortURL];
@@ -98,7 +99,7 @@ app.get("/urls/:shortURL", (req, res) => {
   }
   res.render("urls_show", templateVars);
 });
-
+/// GET /u/:shortURL only if :shortURL exists and points to a valid longURL
 app.get("/u/:shortURL", (req, res) => {
   let shortURL = req.params.shortURL;
   let url = urlDatabase[shortURL];
@@ -117,7 +118,7 @@ app.get("/u/:shortURL", (req, res) => {
     res.redirect(longURL);
   }
 });
-
+/// GET /register only if user is not logged in, otherwise redirect to GET /urls
 app.get("/register", (req, res) => {
   let userID = req.session["user_id"];
   let templateVars = { user: users[userID] };
@@ -127,7 +128,7 @@ app.get("/register", (req, res) => {
     res.redirect("/urls");
   }
 });
-
+/// GET /login only if user is not logged in, otherwise redirect to GET /urls
 app.get("/login", (req, res) => {
   let userID = req.session["user_id"];
   let templateVars = { user: users[userID] };
@@ -137,7 +138,7 @@ app.get("/login", (req, res) => {
     res.redirect("/urls");
   }
 });
-
+/// POST to /urls only if user is logged in
 app.post("/urls", (req, res) => {
   let userID = req.session["user_id"];
   if (!userID) {
@@ -157,7 +158,7 @@ app.post("/urls", (req, res) => {
   };
   res.redirect(`/urls/${shortURL}`);
 });
-
+/// POST to /urls/:shortURL/delete only if user is logged in and owns :shortURL
 app.post("/urls/:shortURL/delete", (req, res) => {
   let userID = req.session["user_id"];
   if (!userID) {
@@ -177,7 +178,7 @@ app.post("/urls/:shortURL/delete", (req, res) => {
   }
   res.redirect("/urls");
 });
-
+/// POST to /urls/:id only if user is logged in and owns :id
 app.post("/urls/:id", (req, res) => {
   let userID = req.session["user_id"];
   if (!userID) {
@@ -201,7 +202,7 @@ app.post("/urls/:id", (req, res) => {
   }
   res.redirect("/urls");
 });
-
+/// POST to /login only if existing user with valid email and password
 app.post("/login", (req, res) => {
   let email = req.body.email;
   let password = req.body.password;
@@ -221,12 +222,12 @@ app.post("/login", (req, res) => {
     res.redirect("/urls");
   }
 });
-
+/// POST to /logout and destroy session cookie
 app.post("/logout", (req, res) => {
   req.session = null;
   res.redirect("/urls");
 });
-
+/// POST to /register only if new user with valid email and password
 app.post("/register", (req, res) => {
   let user = {
     id: generateRandomString(),
