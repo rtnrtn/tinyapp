@@ -50,7 +50,12 @@ const urlsForUser = function(id) {
 
 /// ROUTES ///
 app.get("/", (req, res) => {
-  res.send("Hello!");
+  let userID = req.session["user_id"];
+  if (!userID) {
+    res.redirect("/login");
+  } else {
+    res.redirect("/urls");
+  }
 });
 
 app.get("/urls.json", (req, res) => {
@@ -78,29 +83,33 @@ app.get("/urls/new", (req, res) => {
 
 app.get("/urls/:shortURL", (req, res) => {
   let shortURL = req.params.shortURL;
-  let userID = req.session["user_id"];
   let url = urlDatabase[shortURL];
-  let ownerIsLoggedIn = url.userID === userID;
-  let templateVars = {
-    user: users[userID],
-    ownerIsLoggedIn: ownerIsLoggedIn
-  };
-  if (ownerIsLoggedIn) {
+  let userID = req.session["user_id"];
+  let templateVars = { user: users[userID] };
+  if (!url) {
+    res.statusCode = 404;
+    res.render("404", templateVars);
+    return;
+  }
+  templateVars.ownerIsLoggedIn = url.userID === userID;
+  if (templateVars.ownerIsLoggedIn) {
     templateVars.shortURL = shortURL;
     templateVars.longURL = urlDatabase[shortURL].longURL;
   }
   res.render("urls_show", templateVars);
 });
 
-app.get("/hello", (req, res) => {
-  res.send("<html><body>Hello <b>World</b></body></html>\n");
-});
-
 app.get("/u/:shortURL", (req, res) => {
   let shortURL = req.params.shortURL;
-  let longURL = urlDatabase[shortURL].longURL;
+  let url = urlDatabase[shortURL];
   let userID = req.session["user_id"];
   let templateVars = { user: users[userID] };
+  if (!url) {
+    res.statusCode = 404;
+    res.render("404", templateVars);
+    return;
+  }
+  let longURL = url.longURL;
   if (!longURL) {
     res.statusCode = 404;
     res.render("404", templateVars);
@@ -112,13 +121,21 @@ app.get("/u/:shortURL", (req, res) => {
 app.get("/register", (req, res) => {
   let userID = req.session["user_id"];
   let templateVars = { user: users[userID] };
-  res.render("register", templateVars);
+  if (!userID) {
+    res.render("register", templateVars);
+  } else {
+    res.redirect("/urls");
+  }
 });
 
 app.get("/login", (req, res) => {
   let userID = req.session["user_id"];
   let templateVars = { user: users[userID] };
-  res.render("login", templateVars);
+  if (!userID) {
+    res.render("login", templateVars);
+  } else {
+    res.redirect("/urls");
+  }
 });
 
 app.post("/urls", (req, res) => {
@@ -162,12 +179,16 @@ app.post("/login", (req, res) => {
   let email = req.body.email;
   let password = req.body.password;
   let user = getUserByEmail(email, users);
+  let userID = req.session["user_id"];
+  let templateVars = { user: users[userID] };
   if (!user) {
     res.statusCode = 403;
-    res.send("403 - Sorry, that email isn't registered.");
-  } else if (!bcrypt.compareSync(password, user.password)) {
+    templateVars.message = "Sorry, that email isn't registered.";
+    res.render("403", templateVars);
+  } else if (!bcrypt.compareSync(password, users[user.password])) {
     res.statusCode = 403;
-    res.send("403 - Incorrect email and/or password.");
+    templateVars.message = "Incorrect email and/or password.";
+    res.render("403", templateVars);
   } else {
     req.session["user_id"] = user.id;
     res.redirect("/urls");
@@ -183,21 +204,26 @@ app.post("/register", (req, res) => {
   let user = {
     id: generateRandomString(),
     email: req.body.email,
-    password: bcrypt.hashSync(req.body.password, saltRounds)
+    password: req.body.password,
   };
+  let userID = req.session["user_id"];
+  let templateVars = { user: users[userID] };
   if (user.email === "" || user.password === "") {
     res.statusCode = 400;
-    res.send("400 - Email and/or password was blank. Please try again.");
+    templateVars.message = "Email and/or password was blank. Please try again.";
+    res.render("400", templateVars);
   } else if (getUserByEmail(user.email, users)) {
     res.statusCode = 400;
-    res.send("400 - Sorry, that email is already registered.");
+    templateVars.message = "Sorry, that email is already registered.";
+    res.render("400", templateVars);
   } else {
     users[user.id] = user;
     req.session["user_id"] = user.id;
+    users[user.password] = bcrypt.hashSync(req.body.password, saltRounds);
     res.redirect("/urls");
   }
 });
 /// END OF ROUTES ///
 app.listen(PORT, () => {
-  console.log(`Example app listening on port ${PORT}!`);
+  console.log(`TinyApp listening on port ${PORT}!`);
 });
