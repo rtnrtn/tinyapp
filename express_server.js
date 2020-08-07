@@ -140,6 +140,15 @@ app.get("/login", (req, res) => {
 
 app.post("/urls", (req, res) => {
   let userID = req.session["user_id"];
+  if (!userID) {
+    res.statusCode = 400;
+    let templateVars = {
+      user: null,
+      message: "You are not logged in."
+    };
+    res.render("400", templateVars);
+    return;
+  }
   let longURL = req.body.longURL;
   let shortURL = generateRandomString();
   urlDatabase[shortURL] = {
@@ -151,6 +160,15 @@ app.post("/urls", (req, res) => {
 
 app.post("/urls/:shortURL/delete", (req, res) => {
   let userID = req.session["user_id"];
+  if (!userID) {
+    res.statusCode = 400;
+    let templateVars = {
+      user: null,
+      message: "You are not logged in."
+    };
+    res.render("400", templateVars);
+    return;
+  }
   let shortURL = req.params.shortURL;
   let url = urlDatabase[shortURL];
   let ownerIsLoggedIn = url.userID === userID;
@@ -162,6 +180,15 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 
 app.post("/urls/:id", (req, res) => {
   let userID = req.session["user_id"];
+  if (!userID) {
+    res.statusCode = 400;
+    let templateVars = {
+      user: null,
+      message: "You are not logged in."
+    };
+    res.render("400", templateVars);
+    return;
+  }
   let shortURL = req.params.id;
   let url = urlDatabase[shortURL];
   let ownerIsLoggedIn = url.userID === userID;
